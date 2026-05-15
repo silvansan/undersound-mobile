@@ -1,17 +1,12 @@
 # undersound_mobile
 
-A new Flutter project.
+Flutter companion app for UnderSound listeners.
+
+On the **Listen** screen, **WebRTC (LiveKit)** is the default for the lowest latency while the LiveKit session is active. Toggle **HLS** for buffered HTTP playback via **audio_service / just_audio**—that route is tuned for reliable **Android background listening** whenever HLS egress is available from the speaker side.
+
+LiveKit joins use **`GET /api/livekit/token`**. Deployments may expose the signaling URL as **`url`**, **`livekitUrl`**, or **`websocketUrl`** in the JSON; this client accepts whichever the server sends.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This project uses standard Flutter tooling. For Flutter setup, see  
+[installation](https://docs.flutter.dev/get-started/install).
