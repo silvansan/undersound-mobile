@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../services/listener_link_parser.dart';
 import '../services/undersound_api_client.dart';
+import 'manual_link_screen.dart';
 import 'player_screen.dart';
 
 class ScanQrScreen extends StatefulWidget {
@@ -14,14 +16,18 @@ class ScanQrScreen extends StatefulWidget {
 
 class _ScanQrScreenState extends State<ScanQrScreen> {
   final _api = const UnderSoundApiClient();
-  final _scannerController = MobileScannerController(
+  final _imagePicker = ImagePicker();
+
+  late final MobileScannerController _scannerController =
+      MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
+
   bool _loading = false;
   String? _error;
 
   Future<void> _handleCode(String? rawValue) async {
-    if (_loading || rawValue == null || rawValue.isEmpty) return;
+    if (_loading || rawValue == null || rawValue.trim().isEmpty) return;
 
     setState(() {
       _loading = true;
@@ -29,19 +35,73 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
     });
 
     try {
-      final link = ListenerLinkParser.parse(rawValue);
+      final link = ListenerLinkParser.parse(rawValue.trim());
       final channelContext = await _api.loadPublicChannel(link);
+
       if (!mounted) return;
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) =>
-              PlayerScreen(link: link, channelContext: channelContext),
+          builder: (_) => PlayerScreen(
+            link: link,
+            channelContext: channelContext,
+          ),
         ),
       );
     } on FormatException catch (error) {
-      setState(() => _error = error.message);
+      if (mounted) {
+        setState(() => _error = error.message);
+      }
     } catch (error) {
-      setState(() => _error = error.toString());
+      if (mounted) {
+        setState(() => _error = error.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _scanQrFromFile() async {
+    if (_loading) return;
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+      );
+
+      if (image == null) {
+        if (mounted) {
+          setState(() => _loading = false);
+        }
+        return;
+      }
+
+      final BarcodeCapture? result =
+          await _scannerController.analyzeImage(image.path);
+
+      final String? rawValue = result?.barcodes.isNotEmpty == true
+          ? result!.barcodes.first.rawValue
+          : null;
+
+      if (rawValue == null || rawValue.isEmpty) {
+        if (mounted) {
+          setState(() => _error = 'No QR code found in this image.');
+        }
+        return;
+      }
+
+      await _handleCode(rawValue);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = 'Could not scan image: $error');
+      }
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -58,21 +118,30 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan QR Code')),
+      appBar: AppBar(
+        title: const Text('Scan QR Code'),
+      ),
       body: Stack(
         children: [
           MobileScanner(
             controller: _scannerController,
-            onDetect: (capture) =>
-                _handleCode(capture.barcodes.firstOrNull?.rawValue),
+            onDetect: (capture) {
+              final String? rawValue = capture.barcodes.isNotEmpty
+                  ? capture.barcodes.first.rawValue
+                  : null;
+
+              _handleCode(rawValue);
+            },
           ),
+
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
               width: double.infinity,
-              color: Theme.of(
-                context,
-              ).colorScheme.surface.withValues(alpha: 0.92),
+              color: Theme.of(context)
+                  .colorScheme
+                  .surface
+                  .withValues(alpha: 0.92),
               padding: const EdgeInsets.all(16),
               child: SafeArea(
                 top: false,
@@ -85,6 +154,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
                           ? 'Loading event...'
                           : 'Point the camera at an UnderSound listener QR code.',
                     ),
+
                     if (_error != null) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -94,6 +164,30 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
                         ),
                       ),
                     ],
+
+                    const SizedBox(height: 12),
+
+                    OutlinedButton.icon(
+                      onPressed: _loading
+                          ? null
+                          : () {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (_) => const ManualLinkScreen(),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.link_rounded),
+                      label: const Text('Paste / enter link manually'),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    OutlinedButton.icon(
+                      onPressed: _loading ? null : _scanQrFromFile,
+                      icon: const Icon(Icons.image_rounded),
+                      label: const Text('Scan QR code from file'),
+                    ),
                   ],
                 ),
               ),
