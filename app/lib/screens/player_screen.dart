@@ -41,12 +41,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   String _status = 'Ready';
   Uri? _streamUrl;
 
-  LiveKitPlaybackSnapshot _webrtcSnap = LiveKitPlaybackSnapshot(
-    phase: StreamConnectionPhase.idle,
-    connected: false,
-    message:
-        'WebRTC is selected. Press play for lowest latency, or switch to HLS.',
-  );
+  late LiveKitPlaybackSnapshot _webrtcSnap;
 
   bool _webrtcBusy = false;
   bool _playing = false;
@@ -296,7 +291,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Future<void> _tryWebRtcFromHls() async {
-    await _audioHandler.pause();
     await _switchTransport(StreamTransportMode.webRtc);
     await _toggleWebRtcPlayback();
   }

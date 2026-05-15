@@ -62,6 +62,7 @@ class LiveKitService {
   LiveKitPlaybackSnapshot _snapshot = const LiveKitPlaybackSnapshot(
     phase: StreamConnectionPhase.idle,
     connected: false,
+    message: 'Tap play to join with WebRTC.',
   );
 
   Room? _room;
@@ -139,6 +140,7 @@ class LiveKitService {
       _snapshot = const LiveKitPlaybackSnapshot(
         phase: StreamConnectionPhase.idle,
         connected: false,
+        message: 'Tap play to join with WebRTC.',
       );
       _broadcast();
     } catch (error, stack) {
