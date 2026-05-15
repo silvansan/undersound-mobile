@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/listener_link.dart';
 import '../models/public_channel.dart';
 import '../services/android_power_service.dart';
+import '../services/favorites_service.dart';
 import '../services/hls_service.dart';
 import '../services/livekit_service.dart';
 import '../services/stream_connection_service.dart';
@@ -29,6 +30,7 @@ class PlayerScreen extends StatefulWidget {
 class _PlayerScreenState extends State<PlayerScreen> {
   final _hlsService = HlsService();
   final _powerService = const AndroidPowerService();
+  final _favoritesService = const FavoritesService();
   late final UnderSoundAudioHandler _audioHandler;
   late final LiveKitService _liveKit;
 
@@ -46,6 +48,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _webrtcBusy = false;
   bool _playing = false;
   bool _batteryOptimizationIgnored = true;
+  bool _savingFavorite = false;
+  bool _favoriteSaved = false;
+  bool _allowPop = false;
+  DateTime? _lastBackPressedAt;
 
   Future<void>? _transportSwitchGate;
 
@@ -81,6 +87,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _webrtcSnap = _liveKit.snapshot;
 
     _checkBatteryOptimization(showPrompt: true);
+    _loadFavoriteState();
     _refreshHls();
   }
 
@@ -128,6 +135,78 @@ class _PlayerScreenState extends State<PlayerScreen> {
         _webrtcSnap = _liveKit.snapshot;
       });
     }
+  }
+
+  Future<void> _loadFavoriteState() async {
+    final saved = await _favoritesService.isSavedUrl(_listenerUrl);
+    if (mounted) {
+      setState(() => _favoriteSaved = saved);
+    }
+  }
+
+  Future<void> _saveFavorite() async {
+    if (_favoriteSaved || _savingFavorite) {
+      return;
+    }
+    setState(() => _savingFavorite = true);
+    try {
+      await _favoritesService.addFavorite(
+        name:
+            '${widget.channelContext.event.name} - ${widget.channelContext.channel.name}',
+        url: _listenerUrl,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() => _favoriteSaved = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Saved to favorites')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save favorite: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _savingFavorite = false);
+      }
+    }
+  }
+
+  Future<bool> _confirmLeaveChannel() async {
+    final now = DateTime.now();
+    final lastPressed = _lastBackPressedAt;
+    if (lastPressed != null &&
+        now.difference(lastPressed) < const Duration(seconds: 2)) {
+      return true;
+    }
+
+    _lastBackPressedAt = now;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Press back again to leave this channel')),
+    );
+    return false;
+  }
+
+  Future<void> _handleAppBarBack() async {
+    if (await _confirmLeaveChannel()) {
+      _leaveChannel();
+    }
+  }
+
+  void _leaveChannel() {
+    if (!mounted) {
+      return;
+    }
+    setState(() => _allowPop = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   Future<void> _mutePreviousTransport(StreamTransportMode previous) async {
@@ -368,13 +447,65 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return _webrtcSnap.connected;
   }
 
+  String get _listenerUrl {
+    return widget.link.serverUrl
+        .replace(
+          pathSegments: [
+            'e',
+            widget.link.eventSlug,
+            widget.link.channelName,
+            'listen',
+          ],
+          queryParameters: {'token': widget.link.token},
+        )
+        .toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final event = widget.channelContext.event;
     final channel = widget.channelContext.channel;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Listen')),
+    return PopScope(
+      canPop: _allowPop,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
+        if (await _confirmLeaveChannel()) {
+          _leaveChannel();
+        }
+      },
+      child: Scaffold(
+      appBar: AppBar(
+        leading: BackButton(
+          onPressed: () {
+            unawaited(_handleAppBarBack());
+          },
+        ),
+        title: const Text('Listen'),
+        actions: [
+          IconButton(
+            onPressed: (_favoriteSaved || _savingFavorite)
+                ? null
+                : () {
+                    unawaited(_saveFavorite());
+                  },
+            tooltip: _favoriteSaved ? 'Saved' : 'Save favorite',
+            icon: _savingFavorite
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    _favoriteSaved
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                  ),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -423,6 +554,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(_primaryStatusLine),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: (_favoriteSaved || _savingFavorite)
+                        ? null
+                        : () {
+                            unawaited(_saveFavorite());
+                          },
+                    icon: Icon(
+                      _favoriteSaved
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                    ),
+                    label: Text(_favoriteSaved ? 'Saved' : 'Save favorite'),
+                  ),
                   if (_transport == StreamTransportMode.webRtc &&
                       _webrtcSnap.phase == StreamConnectionPhase.failed &&
                       (_webrtcSnap.lastErrorDetail ?? '').isNotEmpty) ...[
@@ -583,10 +728,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            widget.link.serverUrl.toString(),
+            _listenerUrl,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
+      ),
       ),
     );
   }
