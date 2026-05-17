@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart' as rtc;
 import 'package:livekit_client/livekit_client.dart';
 
 import '../models/listener_link.dart';
@@ -203,6 +204,7 @@ class LiveKitService {
       ),
     );
 
+    await _preferBluetoothOrSpeakerOutput();
     await _primeExisting(room);
     await _applyMuteState();
 
@@ -241,6 +243,23 @@ class LiveKitService {
   Future<void> _ensureAudioSession() async {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
+  }
+
+  Future<void> _preferBluetoothOrSpeakerOutput() async {
+    try {
+      await rtc.Helper.setSpeakerphoneOnButPreferBluetooth();
+      developer.log(
+        'Requested WebRTC audio route preference: Bluetooth, then speaker.',
+        name: 'UnderSound.WebRTC',
+      );
+    } catch (error, stackTrace) {
+      developer.log(
+        'Failed to set WebRTC audio route preference.',
+        name: 'UnderSound.WebRTC',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<void> _tearDownListeners() async {
