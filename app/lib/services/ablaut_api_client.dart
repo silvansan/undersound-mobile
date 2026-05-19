@@ -8,8 +8,8 @@ import '../models/public_channel.dart';
 import '../models/public_listener_access.dart';
 import 'listener_access_messages.dart';
 
-class UnderSoundApiClient {
-  const UnderSoundApiClient({http.Client? httpClient})
+class AblautApiClient {
+  const AblautApiClient({http.Client? httpClient})
       : _httpClient = httpClient;
 
   final http.Client? _httpClient;

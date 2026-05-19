@@ -11,9 +11,9 @@ import '../services/hls_service.dart';
 import '../services/livekit_playback_controller.dart';
 import '../services/livekit_service.dart';
 import '../services/stream_connection_service.dart';
-import '../services/undersound_audio_service.dart';
+import '../services/ablaut_audio_service.dart';
 import '../services/listener_session_coordinator.dart';
-import '../services/undersound_api_client.dart';
+import '../services/ablaut_api_client.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({
@@ -36,11 +36,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
   final _powerService = const AndroidPowerService();
   final _favoritesService = const FavoritesService();
   final _sessionCoordinator = const ListenerSessionCoordinator();
-  late final UnderSoundAudioHandler _audioHandler;
+  late final AblautAudioHandler _audioHandler;
   late String? _listenerSessionToken;
   late final LiveKitPlaybackController _webRtcController;
 
-  StreamSubscription<UnderSoundPlaybackSnapshot>? _snapshotSubscription;
+  StreamSubscription<AblautPlaybackSnapshot>? _snapshotSubscription;
   StreamSubscription<LiveKitPlaybackSnapshot>? _webrtcSnapshots;
 
   StreamTransportMode _transport = StreamTransportMode.webRtc;
@@ -65,8 +65,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
   void initState() {
     super.initState();
     _listenerSessionToken = widget.listenerSessionToken;
-    _audioHandler = UnderSoundAudioService.instance.handler;
-    _webRtcController = UnderSoundAudioService.instance.webRtcController;
+    _audioHandler = AblautAudioService.instance.handler;
+    _webRtcController = AblautAudioService.instance.webRtcController;
 
     _snapshotSubscription = _audioHandler.snapshots.listen((snapshot) {
       if (!mounted) {
@@ -119,7 +119,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     } catch (error, stack) {
       developer.log(
         'Transport switch cleanup failed.',
-        name: 'UnderSound.UI',
+        name: 'ablaut.UI',
         error: error,
         stackTrace: stack,
       );
@@ -245,7 +245,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       );
       developer.log(
         'HLS summary: url=${summary.playableUrl}, status=${summary.statusSummary}.',
-        name: 'UnderSound.UI',
+        name: 'ablaut.UI',
       );
       if (!mounted) {
         return;
@@ -301,8 +301,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     try {
       setState(() => _status = 'Connecting...');
-      await _audioHandler.playUnderSound(
-        UnderSoundStreamRequest(
+      await _audioHandler.playChannel(
+        AblautStreamRequest(
           link: widget.link,
           channelContext: widget.channelContext,
         ),
@@ -313,7 +313,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     } catch (error, stackTrace) {
       developer.log(
         'Unable to start playback from player screen.',
-        name: 'UnderSound.UI',
+        name: 'ablaut.UI',
         error: error,
         stackTrace: stackTrace,
       );
@@ -381,7 +381,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     } catch (error, stackTrace) {
       developer.log(
         'WebRTC did not start.',
-        name: 'UnderSound.UI',
+        name: 'ablaut.UI',
         error: error,
         stackTrace: stackTrace,
       );
@@ -697,14 +697,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     ],
                     const SizedBox(height: 18),
                     if (_transport == StreamTransportMode.hls)
-                      StreamBuilder<UnderSoundPlaybackSnapshot>(
+                      StreamBuilder<AblautPlaybackSnapshot>(
                         stream: _audioHandler.snapshots,
                         initialData: _audioHandler.snapshot,
                         builder: (context, snapshot) {
                           final playing = snapshot.data?.playing ?? _playing;
                           final hlsPhase = StreamConnectionService.phaseForHls(
                             snapshot.data?.status ??
-                                UnderSoundPlaybackStatus.idle,
+                                AblautPlaybackStatus.idle,
                           );
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,

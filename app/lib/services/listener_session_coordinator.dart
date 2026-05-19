@@ -7,7 +7,7 @@ import '../widgets/listener_password_dialog.dart';
 import 'favorites_service.dart';
 import 'listener_access_messages.dart';
 import 'listener_secure_store.dart';
-import 'undersound_api_client.dart';
+import 'ablaut_api_client.dart';
 
 class ListenerAccessException implements Exception {
   const ListenerAccessException(this.message);
@@ -20,14 +20,14 @@ class ListenerAccessException implements Exception {
 
 class ListenerSessionCoordinator {
   const ListenerSessionCoordinator({
-    UnderSoundApiClient? api,
+    AblautApiClient? api,
     FavoritesService? favoritesService,
     ListenerSecureStore? secureStore,
-  })  : _api = api ?? const UnderSoundApiClient(),
+  })  : _api = api ?? const AblautApiClient(),
         _favoritesService = favoritesService ?? const FavoritesService(),
         _secureStore = secureStore ?? const ListenerSecureStore();
 
-  final UnderSoundApiClient _api;
+  final AblautApiClient _api;
   final FavoritesService _favoritesService;
   final ListenerSecureStore _secureStore;
 

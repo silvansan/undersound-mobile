@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class AndroidPowerService {
   const AndroidPowerService();
 
-  static const _channel = MethodChannel('undersound/power');
+  static const _channel = MethodChannel('ablaut/power');
 
   bool get _isAndroid => Platform.isAndroid;
 
@@ -22,7 +22,7 @@ class AndroidPowerService {
     } on PlatformException catch (error, stackTrace) {
       developer.log(
         'Unable to read battery optimization state.',
-        name: 'UnderSound.Power',
+        name: 'ablaut.Power',
         error: error,
         stackTrace: stackTrace,
       );
@@ -64,7 +64,7 @@ class AndroidPowerService {
     } on PlatformException catch (error, stackTrace) {
       developer.log(
         'Android power method failed: $method',
-        name: 'UnderSound.Power',
+        name: 'ablaut.Power',
         error: error,
         stackTrace: stackTrace,
       );

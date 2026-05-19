@@ -13,9 +13,9 @@ import 'hls_service.dart';
 import 'livekit_playback_controller.dart';
 import 'livekit_service.dart';
 import 'stream_connection_service.dart';
-import 'undersound_api_client.dart';
+import 'ablaut_api_client.dart';
 
-enum UnderSoundPlaybackStatus {
+enum AblautPlaybackStatus {
   idle,
   connecting,
   buffering,
@@ -26,37 +26,37 @@ enum UnderSoundPlaybackStatus {
   error,
 }
 
-extension UnderSoundPlaybackStatusLabel on UnderSoundPlaybackStatus {
+extension AblautPlaybackStatusLabel on AblautPlaybackStatus {
   String get label {
     return switch (this) {
-      UnderSoundPlaybackStatus.idle => 'Ready',
-      UnderSoundPlaybackStatus.connecting => 'Connecting',
-      UnderSoundPlaybackStatus.buffering => 'Buffering',
-      UnderSoundPlaybackStatus.playing => 'Playing',
-      UnderSoundPlaybackStatus.paused => 'Paused',
-      UnderSoundPlaybackStatus.reconnecting => 'Reconnecting',
-      UnderSoundPlaybackStatus.waiting => 'Waiting for speaker',
-      UnderSoundPlaybackStatus.error => 'Audio stream not available',
+      AblautPlaybackStatus.idle => 'Ready',
+      AblautPlaybackStatus.connecting => 'Connecting',
+      AblautPlaybackStatus.buffering => 'Buffering',
+      AblautPlaybackStatus.playing => 'Playing',
+      AblautPlaybackStatus.paused => 'Paused',
+      AblautPlaybackStatus.reconnecting => 'Reconnecting',
+      AblautPlaybackStatus.waiting => 'Waiting for speaker',
+      AblautPlaybackStatus.error => 'Audio stream not available',
     };
   }
 }
 
-class UnderSoundPlaybackSnapshot {
-  const UnderSoundPlaybackSnapshot({
+class AblautPlaybackSnapshot {
+  const AblautPlaybackSnapshot({
     required this.status,
     required this.playing,
     this.message,
   });
 
-  final UnderSoundPlaybackStatus status;
+  final AblautPlaybackStatus status;
   final bool playing;
   final String? message;
 
   String get displayText => message ?? status.label;
 }
 
-class UnderSoundStreamRequest {
-  const UnderSoundStreamRequest({
+class AblautStreamRequest {
+  const AblautStreamRequest({
     required this.link,
     required this.channelContext,
   });
@@ -65,16 +65,16 @@ class UnderSoundStreamRequest {
   final PublicChannelContext channelContext;
 }
 
-class UnderSoundAudioService {
-  UnderSoundAudioService._();
+class AblautAudioService {
+  AblautAudioService._();
 
-  static final UnderSoundAudioService instance = UnderSoundAudioService._();
+  static final AblautAudioService instance = AblautAudioService._();
 
-  UnderSoundAudioHandler? _handler;
+  AblautAudioHandler? _handler;
   final LiveKitPlaybackController webRtcController =
       LiveKitPlaybackController();
 
-  UnderSoundAudioHandler get handler {
+  AblautAudioHandler get handler {
     final handler = _handler;
     if (handler == null) {
       throw StateError('ablaut audio service has not been initialized.');
@@ -87,12 +87,12 @@ class UnderSoundAudioService {
       return;
     }
 
-    _handler = await AudioService.init<UnderSoundAudioHandler>(
-      builder: () => UnderSoundAudioHandler(
+    _handler = await AudioService.init<AblautAudioHandler>(
+      builder: () => AblautAudioHandler(
         webRtcController: webRtcController,
       ),
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.undersound.mobile.ablaut.playback',
+        androidNotificationChannelId: 'com.ablaut.mobile.playback',
         androidNotificationChannelName: 'ablaut playback',
         androidNotificationIcon: 'mipmap/ic_launcher',
         androidNotificationOngoing: true,
@@ -107,10 +107,10 @@ enum _NotificationTransport {
   webRtc,
 }
 
-class UnderSoundAudioHandler extends BaseAudioHandler {
-  UnderSoundAudioHandler({
+class AblautAudioHandler extends BaseAudioHandler {
+  AblautAudioHandler({
     required LiveKitPlaybackController webRtcController,
-    UnderSoundApiClient apiClient = const UnderSoundApiClient(),
+    AblautApiClient apiClient = const AblautApiClient(),
     AndroidPowerService powerService = const AndroidPowerService(),
   })  : _webRtcController = webRtcController,
         _hlsService = HlsService(apiClient),
@@ -129,9 +129,9 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
   final AndroidPowerService _powerService;
   final AudioPlayer _player = AudioPlayer();
   final _snapshotController =
-      StreamController<UnderSoundPlaybackSnapshot>.broadcast();
+      StreamController<AblautPlaybackSnapshot>.broadcast();
 
-  UnderSoundStreamRequest? _request;
+  AblautStreamRequest? _request;
   Uri? _currentUrl;
   bool _wantsPlayback = false;
   bool _reconnecting = false;
@@ -144,33 +144,33 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
   StreamSubscription<void>? _becomingNoisySubscription;
   _NotificationTransport? _notificationTransport;
 
-  Stream<UnderSoundPlaybackSnapshot> get snapshots =>
+  Stream<AblautPlaybackSnapshot> get snapshots =>
       _snapshotController.stream;
 
-  UnderSoundPlaybackSnapshot get snapshot => UnderSoundPlaybackSnapshot(
+  AblautPlaybackSnapshot get snapshot => AblautPlaybackSnapshot(
         status: _status,
         playing: _player.playing,
         message: _message,
       );
 
-  UnderSoundPlaybackStatus _status = UnderSoundPlaybackStatus.idle;
+  AblautPlaybackStatus _status = AblautPlaybackStatus.idle;
   String? _message;
 
-  Future<void> playUnderSound(UnderSoundStreamRequest request) async {
+  Future<void> playChannel(AblautStreamRequest request) async {
     _request = request;
     _notificationTransport = _NotificationTransport.hls;
     _wantsPlayback = true;
     _retryAttempt = 0;
     developer.log(
-      'Starting UnderSound playback for channel ${request.channelContext.channel.id}.',
-      name: 'UnderSound.Audio',
+      'Starting ablaut playback for channel ${request.channelContext.channel.id}.',
+      name: 'ablaut.Audio',
     );
     await _powerService.requestPostNotificationsPermission();
     await _setKeepAlive(true);
     await _loadAndPlay(refreshUrl: true);
   }
 
-  Future<HlsStatus> refreshHlsStatus(UnderSoundStreamRequest request) {
+  Future<HlsStatus> refreshHlsStatus(AblautStreamRequest request) {
     return _loadHlsStatus(request);
   }
 
@@ -209,7 +209,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     _bufferingTimer?.cancel();
     await _player.pause();
     await _setKeepAlive(false);
-    _setStatus(UnderSoundPlaybackStatus.paused);
+    _setStatus(AblautPlaybackStatus.paused);
   }
 
   @override
@@ -226,7 +226,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     _bufferingTimer?.cancel();
     await _player.stop();
     await _setKeepAlive(false);
-    _setStatus(UnderSoundPlaybackStatus.idle);
+    _setStatus(AblautPlaybackStatus.idle);
     return super.stop();
   }
 
@@ -277,7 +277,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
       onError: (Object error, StackTrace stackTrace) {
         developer.log(
           'Playback event error.',
-          name: 'UnderSound.Audio',
+          name: 'ablaut.Audio',
           error: error,
           stackTrace: stackTrace,
         );
@@ -297,7 +297,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
   Future<void> _handleAudioBecomingNoisy() async {
     developer.log(
       'Audio output disconnected; pausing playback.',
-      name: 'UnderSound.Audio',
+      name: 'ablaut.Audio',
     );
 
     if (_notificationTransport == _NotificationTransport.webRtc &&
@@ -311,7 +311,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
         _player.playing) {
       await pause();
       _setStatus(
-        UnderSoundPlaybackStatus.paused,
+        AblautPlaybackStatus.paused,
         'Playback paused because audio output disconnected.',
       );
     }
@@ -326,8 +326,8 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     try {
       _setStatus(
         _reconnecting
-            ? UnderSoundPlaybackStatus.reconnecting
-            : UnderSoundPlaybackStatus.connecting,
+            ? AblautPlaybackStatus.reconnecting
+            : AblautPlaybackStatus.connecting,
       );
       final url = refreshUrl || _currentUrl == null
           ? await _resolveStreamUrl(request)
@@ -335,7 +335,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
 
       if (url == null) {
         _setStatus(
-          UnderSoundPlaybackStatus.waiting,
+          AblautPlaybackStatus.waiting,
           'HLS is not running yet. Ask the speaker to start publishing.',
         );
         _scheduleReconnect('HLS status is not active.');
@@ -345,7 +345,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
       _currentUrl = url;
       developer.log(
         'Resolved HLS URL: $url',
-        name: 'UnderSound.Audio',
+        name: 'ablaut.Audio',
       );
       mediaItem.add(
         MediaItem(
@@ -375,15 +375,15 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
         'Playback started: duration=${_player.duration}, '
         'position=${_player.position}, buffered=${_player.bufferedPosition}, '
         'processing=${_player.processingState}.',
-        name: 'UnderSound.Audio',
+        name: 'ablaut.Audio',
       );
       _retryAttempt = 0;
       _reconnecting = false;
-      _setStatus(UnderSoundPlaybackStatus.playing);
+      _setStatus(AblautPlaybackStatus.playing);
     } catch (error, stackTrace) {
       developer.log(
         'Unable to start HLS stream.',
-        name: 'UnderSound.Audio',
+        name: 'ablaut.Audio',
         error: error,
         stackTrace: stackTrace,
       );
@@ -391,7 +391,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     }
   }
 
-  Future<Uri?> _resolveStreamUrl(UnderSoundStreamRequest request) async {
+  Future<Uri?> _resolveStreamUrl(AblautStreamRequest request) async {
     final url = await _hlsService.resolvePlayableUrl(
       serverUrl: request.link.serverUrl,
       channel: request.channelContext.channel,
@@ -399,13 +399,13 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     if (url == null) {
       developer.log(
         'Fallback audio URL could not be resolved.',
-        name: 'UnderSound.Audio',
+        name: 'ablaut.Audio',
       );
     }
     return url;
   }
 
-  Future<HlsStatus> _loadHlsStatus(UnderSoundStreamRequest request) {
+  Future<HlsStatus> _loadHlsStatus(AblautStreamRequest request) {
     return _hlsService.loadRawStatus(
       serverUrl: request.link.serverUrl,
       channel: request.channelContext.channel,
@@ -417,13 +417,13 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
       'Player state: playing=${state.playing}, processing=${state.processingState}, '
       'position=${_player.position}, buffered=${_player.bufferedPosition}, '
       'duration=${_player.duration}.',
-      name: 'UnderSound.Audio',
+      name: 'ablaut.Audio',
     );
 
     if (state.processingState == ProcessingState.buffering ||
         state.processingState == ProcessingState.loading) {
       if (_wantsPlayback) {
-        _setStatus(UnderSoundPlaybackStatus.buffering);
+        _setStatus(AblautPlaybackStatus.buffering);
         _startBufferingWatchdog();
       }
       return;
@@ -432,12 +432,12 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     _bufferingTimer?.cancel();
 
     if (state.playing && state.processingState == ProcessingState.ready) {
-      _setStatus(UnderSoundPlaybackStatus.playing);
+      _setStatus(AblautPlaybackStatus.playing);
       return;
     }
 
     if (!state.playing && !_wantsPlayback) {
-      _setStatus(UnderSoundPlaybackStatus.paused);
+      _setStatus(AblautPlaybackStatus.paused);
       return;
     }
 
@@ -446,7 +446,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
             state.processingState == ProcessingState.completed)) {
       developer.log(
         'Playback reached ${state.processingState}; current URL=$_currentUrl.',
-        name: 'UnderSound.Audio',
+        name: 'ablaut.Audio',
       );
       _scheduleReconnect('Playback stopped unexpectedly.');
     }
@@ -471,7 +471,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
 
     _retryTimer?.cancel();
     _reconnecting = true;
-    _setStatus(UnderSoundPlaybackStatus.reconnecting, 'Reconnecting...');
+    _setStatus(AblautPlaybackStatus.reconnecting, 'Reconnecting...');
     final delaySeconds =
         (_retryBaseDelay.inSeconds * (1 << _retryAttempt)).clamp(
       _retryBaseDelay.inSeconds,
@@ -481,7 +481,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
 
     developer.log(
       '$reason Retrying in ${delaySeconds}s.',
-      name: 'UnderSound.Audio',
+      name: 'ablaut.Audio',
     );
     _retryTimer = Timer(Duration(seconds: delaySeconds), () {
       _loadAndPlay(refreshUrl: true);
@@ -498,7 +498,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     } catch (error, stackTrace) {
       developer.log(
         'Wakelock update failed.',
-        name: 'UnderSound.Audio',
+        name: 'ablaut.Audio',
         error: error,
         stackTrace: stackTrace,
       );
@@ -506,7 +506,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     await _powerService.setWifiLockEnabled(enabled);
   }
 
-  void _setStatus(UnderSoundPlaybackStatus status, [String? message]) {
+  void _setStatus(AblautPlaybackStatus status, [String? message]) {
     _status = status;
     _message = message;
     _snapshotController.add(snapshot);

@@ -1,6 +1,6 @@
 # ablaut mobile app
 
-Flutter listener client for ablaut / UnderSound-Studio deployments.
+Flutter listener client for ablaut server deployments.
 
 ## Playback
 
@@ -40,6 +40,8 @@ flutter run
 
 ## Release builds
 
+### Android
+
 Place signing config in `android/key.properties` (not committed). Then:
 
 ```bash
@@ -52,7 +54,49 @@ Outputs:
 - `build/app/outputs/flutter-apk/app-release.apk`
 - `build/app/outputs/bundle/release/app-release.aab`
 
-The Android **applicationId** stays `com.undersound.mobile` so existing installs can upgrade in place. The visible app name is **ablaut**.
+The Android **applicationId** stays `com.undersound.mobile` (legacy package id) so existing installs can upgrade in place. The visible app name is **ablaut**. Native code uses the `com.ablaut.mobile` namespace.
+
+### iOS (iPhone and iPad)
+
+Requires a Mac with Xcode 15+ and an [Apple Developer](https://developer.apple.com) account.
+
+| Setting | Value |
+|--------|--------|
+| Bundle ID | `com.ablaut.mobile` |
+| Minimum iOS | 15.0 |
+| Devices | iPhone + iPad (`TARGETED_DEVICE_FAMILY = 1,2`) |
+| Display name | ablaut |
+
+**One-time setup**
+
+1. Open `ios/Runner.xcworkspace` in Xcode (not the `.xcodeproj`).
+2. Select the **Runner** target → **Signing & Capabilities** → choose your Team and enable **Automatically manage signing**.
+3. Confirm the bundle identifier is `com.ablaut.mobile` and matches an App ID in the Developer portal.
+4. Run `pod install` in `ios/` if CocoaPods prompts you (Flutter usually runs this on build).
+
+**Archive for App Store / TestFlight**
+
+```bash
+flutter build ipa --release
+```
+
+Or in Xcode: **Product → Archive**, then distribute via Organizer.
+
+For CI or `xcodebuild` export, copy `ios/ExportOptions.plist.example` to `ios/ExportOptions.plist`, set your `teamID`, and pass it to `xcodebuild -exportArchive`.
+
+**App Store Connect checklist**
+
+- Upload screenshots for **6.7" iPhone** and **12.9" iPad** (or use Xcode’s screenshot tools on simulators).
+- Privacy: declare camera and photo library use (QR scan / gallery import). No tracking.
+- Export compliance: app uses standard HTTPS only (`ITSAppUsesNonExemptEncryption` is false in `Info.plist`).
+- Background **audio** is enabled for lock-screen playback.
+- Legacy `undersound://` links are registered as a URL scheme for deep links.
+
+**Simulator / device dev**
+
+```bash
+flutter run -d ios
+```
 
 ## Launcher icons
 

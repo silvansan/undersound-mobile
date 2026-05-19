@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'services/undersound_audio_service.dart';
+import 'services/ablaut_audio_service.dart';
 import 'screens/home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await UnderSoundAudioService.instance.initialize();
+  await AblautAudioService.instance.initialize();
   runApp(const AblautApp());
 }
 

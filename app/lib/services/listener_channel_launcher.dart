@@ -5,18 +5,18 @@ import '../models/listener_link.dart';
 import '../screens/player_screen.dart';
 import 'favorites_service.dart';
 import 'listener_session_coordinator.dart';
-import 'undersound_api_client.dart';
+import 'ablaut_api_client.dart';
 
 class ListenerChannelLauncher {
   const ListenerChannelLauncher({
-    UnderSoundApiClient? api,
+    AblautApiClient? api,
     ListenerSessionCoordinator? coordinator,
     FavoritesService? favoritesService,
-  })  : _api = api ?? const UnderSoundApiClient(),
+  })  : _api = api ?? const AblautApiClient(),
         _coordinator = coordinator ?? const ListenerSessionCoordinator(),
         _favoritesService = favoritesService ?? const FavoritesService();
 
-  final UnderSoundApiClient _api;
+  final AblautApiClient _api;
   final ListenerSessionCoordinator _coordinator;
   final FavoritesService _favoritesService;
 

@@ -57,6 +57,27 @@
 	<string>LaunchScreen</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan ablaut listener QR codes.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo that contains an ablaut listener QR code.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ablaut listens only; the microphone stays off for live channels.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>ablaut.legacy.undersound</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>undersound</string>
+			</array>
+		</dict>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<false/>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>

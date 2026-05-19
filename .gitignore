@@ -27,6 +27,9 @@ ablaut-Logo-transparent.png
 ablaut-Logo.ico
 /ablaut-logo.png
 MOBILE_ABLAUT_REBRAND.md
+UNDERSOUND_MOBILE_APP_PLAN.md
+*_APP_PLAN.md
+*_REBRAND.md
 
 # Local website/marketing copy (not part of the app repo).
 wordpress-download-page.md
@@ -51,3 +54,8 @@ GoogleService-Info.plist
 app/android/key.properties
 app/android/*.jks
 app/android/*.keystore
+app/ios/ExportOptions.plist
+app/ios/fastlane/report.xml
+app/ios/fastlane/Preview.html
+app/ios/fastlane/screenshots
+app/ios/fastlane/test_output

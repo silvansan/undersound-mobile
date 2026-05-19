@@ -9,12 +9,14 @@ class FavoritesService {
   const FavoritesService({ListenerSecureStore? secureStore})
       : _secureStore = secureStore ?? const ListenerSecureStore();
 
-  static const _storageKey = 'undersound.favoriteChannels.v1';
+  static const _storageKey = 'ablaut.favoriteChannels.v1';
+  static const _legacyStorageKey = 'undersound.favoriteChannels.v1';
 
   final ListenerSecureStore _secureStore;
 
   Future<List<FavoriteChannel>> loadFavorites() async {
     final preferences = await SharedPreferences.getInstance();
+    await _migrateLegacyFavoritesIfNeeded(preferences);
     final rawItems = preferences.getStringList(_storageKey) ?? const [];
     final favorites = <FavoriteChannel>[];
 
@@ -180,6 +182,20 @@ class FavoritesService {
     if (removed != null) {
       await _secureStore.deletePassword(removed.url);
     }
+  }
+
+  Future<void> _migrateLegacyFavoritesIfNeeded(
+    SharedPreferences preferences,
+  ) async {
+    if (preferences.containsKey(_storageKey)) {
+      return;
+    }
+    final legacy = preferences.getStringList(_legacyStorageKey);
+    if (legacy == null || legacy.isEmpty) {
+      return;
+    }
+    await preferences.setStringList(_storageKey, legacy);
+    await preferences.remove(_legacyStorageKey);
   }
 
   Future<void> _saveFavorites(List<FavoriteChannel> favorites) async {

@@ -1,4 +1,4 @@
-import 'undersound_audio_service.dart';
+import 'ablaut_audio_service.dart';
 
 /// Which transport backs playback on the player screen.
 enum StreamTransportMode {
@@ -15,26 +15,26 @@ enum StreamConnectionPhase {
   failed,
 }
 
-/// Maps legacy [UnderSoundPlaybackStatus] from audio_service/HLS playback to the
+/// Maps [AblautPlaybackStatus] from audio_service/HLS playback to the
 /// smaller UI surface requested for stream transport.
 abstract final class StreamConnectionService {
   const StreamConnectionService._();
 
   static StreamConnectionPhase phaseForHls(
-    UnderSoundPlaybackStatus playback,
+    AblautPlaybackStatus playback,
   ) {
     return switch (playback) {
-      UnderSoundPlaybackStatus.idle => StreamConnectionPhase.idle,
-      UnderSoundPlaybackStatus.connecting =>
+      AblautPlaybackStatus.idle => StreamConnectionPhase.idle,
+      AblautPlaybackStatus.connecting =>
         StreamConnectionPhase.connecting,
-      UnderSoundPlaybackStatus.buffering => StreamConnectionPhase.connecting,
-      UnderSoundPlaybackStatus.playing || UnderSoundPlaybackStatus.paused =>
+      AblautPlaybackStatus.buffering => StreamConnectionPhase.connecting,
+      AblautPlaybackStatus.playing || AblautPlaybackStatus.paused =>
         StreamConnectionPhase.connected,
-      UnderSoundPlaybackStatus.reconnecting =>
+      AblautPlaybackStatus.reconnecting =>
         StreamConnectionPhase.reconnecting,
-      UnderSoundPlaybackStatus.waiting =>
+      AblautPlaybackStatus.waiting =>
         StreamConnectionPhase.connecting,
-      UnderSoundPlaybackStatus.error => StreamConnectionPhase.failed,
+      AblautPlaybackStatus.error => StreamConnectionPhase.failed,
     };
   }
 }

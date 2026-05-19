@@ -24,7 +24,7 @@ void main() {
     expect(link.channelSlug, 'fr');
   });
 
-  test('parses legacy UnderSound listener URLs without requiring token data',
+  test('parses legacy undersound:// listener URLs without requiring token data',
       () {
     final link = ListenerLinkParser.parse(
       'https://voice.example.com/e/default-event/English/listen?token=abc123',

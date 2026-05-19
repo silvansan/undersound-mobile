@@ -1,4 +1,4 @@
-package com.undersound.undersound_mobile
+package com.ablaut.mobile
 
 import android.Manifest
 import android.content.Context
@@ -15,7 +15,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : AudioServiceActivity() {
-    private val channelName = "undersound/power"
+    private val channelName = "ablaut/power"
     private val notificationRequestCode = 4101
     private var wifiLock: WifiManager.WifiLock? = null
 
@@ -71,7 +71,7 @@ class MainActivity : AudioServiceActivity() {
         }
         runCatching { startActivity(intent) }
             .onFailure {
-                Log.w("UnderSound.Power", "Battery optimization request failed; opening settings.", it)
+                Log.w("ablaut.Power", "Battery optimization request failed; opening settings.", it)
                 openBatterySettings()
             }
     }
@@ -116,18 +116,18 @@ class MainActivity : AudioServiceActivity() {
         } else {
             WifiManager.WIFI_MODE_FULL_HIGH_PERF
         }
-        wifiLock = wifiManager.createWifiLock(lockMode, "UnderSound:PlaybackWifiLock").apply {
+        wifiLock = wifiManager.createWifiLock(lockMode, "ablaut:PlaybackWifiLock").apply {
             setReferenceCounted(false)
             acquire()
         }
-        Log.d("UnderSound.Power", "WiFi lock acquired for playback.")
+        Log.d("ablaut.Power", "WiFi lock acquired for playback.")
     }
 
     private fun releaseWifiLock() {
         val lock = wifiLock ?: return
         if (lock.isHeld) {
             lock.release()
-            Log.d("UnderSound.Power", "WiFi lock released.")
+            Log.d("ablaut.Power", "WiFi lock released.")
         }
         wifiLock = null
     }

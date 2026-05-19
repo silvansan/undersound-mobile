@@ -5,7 +5,7 @@ import '../services/favorites_service.dart';
 import '../services/listener_channel_launcher.dart';
 import '../services/listener_link_parser.dart';
 import '../services/listener_session_coordinator.dart';
-import '../services/undersound_api_client.dart';
+import '../services/ablaut_api_client.dart';
 import 'edit_favorite_screen.dart';
 import 'scan_qr_screen.dart';
 
@@ -19,7 +19,7 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final _favoritesService = const FavoritesService();
   final _launcher = const ListenerChannelLauncher();
-  final _api = const UnderSoundApiClient();
+  final _api = const AblautApiClient();
   final _sessionCoordinator = const ListenerSessionCoordinator();
 
   List<FavoriteChannel> _favorites = const [];

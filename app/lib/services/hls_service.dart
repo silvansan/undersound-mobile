@@ -1,5 +1,5 @@
 import '../models/public_channel.dart';
-import 'undersound_api_client.dart';
+import 'ablaut_api_client.dart';
 
 /// Snapshot of whether a public fallback stream is available for listeners.
 typedef HlsStreamSummary = ({
@@ -8,9 +8,9 @@ typedef HlsStreamSummary = ({
 });
 
 class HlsService {
-  HlsService([this.api = const UnderSoundApiClient()]);
+  HlsService([this.api = const AblautApiClient()]);
 
-  final UnderSoundApiClient api;
+  final AblautApiClient api;
 
   /// Resolves the server-provided Icecast fallback stream, when present.
   Future<Uri?> resolvePlayableUrl({

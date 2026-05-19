@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:ablaut_app/services/listener_link_parser.dart';
-import 'package:ablaut_app/services/undersound_api_client.dart';
+import 'package:ablaut_app/services/ablaut_api_client.dart';
 
 void main() {
   test('verify-password parses session token response', () async {
@@ -24,7 +24,7 @@ void main() {
       );
     });
 
-    final api = UnderSoundApiClient(httpClient: client);
+    final api = AblautApiClient(httpClient: client);
     final link = ListenerLinkParser.parse(
       'https://voice.example.com/listen/evt/en',
     );
@@ -50,7 +50,7 @@ void main() {
       );
     });
 
-    final api = UnderSoundApiClient(httpClient: client);
+    final api = AblautApiClient(httpClient: client);
     final link = ListenerLinkParser.parse(
       'https://voice.example.com/listen/evt/en',
     );
@@ -68,7 +68,7 @@ void main() {
       return http.Response(jsonEncode({'error': 'Unauthorized'}), 401);
     });
 
-    final api = UnderSoundApiClient(httpClient: client);
+    final api = AblautApiClient(httpClient: client);
     final link = ListenerLinkParser.parse(
       'https://voice.example.com/listen/evt/en',
     );

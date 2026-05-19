@@ -12,6 +12,7 @@ class ListenerLinkParser {
       throw const FormatException('Enter a complete link, including https://.');
     }
 
+    // Legacy deep-link scheme from pre-ablaut deployments.
     if (uri.scheme == 'undersound') {
       return _parseCustomScheme(uri);
     }

@@ -8,7 +8,7 @@ import 'package:livekit_client/livekit_client.dart';
 import '../models/listener_link.dart';
 import '../models/public_channel.dart';
 import 'stream_connection_service.dart';
-import 'undersound_api_client.dart';
+import 'ablaut_api_client.dart';
 
 class LiveKitPlaybackSnapshot {
   const LiveKitPlaybackSnapshot({
@@ -49,17 +49,17 @@ class LiveKitPlaybackSnapshot {
   }
 }
 
-/// Lowest-latency LiveKit subscriber session for Undersound channels.
+/// Lowest-latency LiveKit subscriber session for ablaut channels.
 ///
 /// Background audio: unlike HLS routed through audio_service / just_audio,
 /// LiveKit follows WebRTC's audio pipeline. Platforms may suspend or mute
 /// WebRTC when backgrounded unless a foreground service manages the session,
 /// unlike the [audio_service]/HLS path. Behavior here is **best-effort only**.
 class LiveKitService {
-  LiveKitService({UnderSoundApiClient api = const UnderSoundApiClient()})
+  LiveKitService({AblautApiClient api = const AblautApiClient()})
       : _api = api;
 
-  final UnderSoundApiClient _api;
+  final AblautApiClient _api;
 
   StreamController<LiveKitPlaybackSnapshot>? _snapshotController;
 
@@ -124,7 +124,7 @@ class LiveKitService {
     } catch (e, stack) {
       developer.log(
         'LiveKit connection failed.',
-        name: 'UnderSound.WebRTC',
+        name: 'ablaut.WebRTC',
         error: e,
         stackTrace: stack,
       );
@@ -152,7 +152,7 @@ class LiveKitService {
     } catch (error, stack) {
       developer.log(
         'LiveKit teardown failed.',
-        name: 'UnderSound.WebRTC',
+        name: 'ablaut.WebRTC',
         error: error,
         stackTrace: stack,
       );
@@ -252,12 +252,12 @@ class LiveKitService {
       await rtc.Helper.setSpeakerphoneOnButPreferBluetooth();
       developer.log(
         'Requested WebRTC audio route preference: Bluetooth, then speaker.',
-        name: 'UnderSound.WebRTC',
+        name: 'ablaut.WebRTC',
       );
     } catch (error, stackTrace) {
       developer.log(
         'Failed to set WebRTC audio route preference.',
-        name: 'UnderSound.WebRTC',
+        name: 'ablaut.WebRTC',
         error: error,
         stackTrace: stackTrace,
       );
@@ -306,7 +306,7 @@ class LiveKitService {
         final human = reasonDetail == null || reasonDetail.isEmpty
             ? 'WebRTC disconnected unexpectedly.'
             : 'WebRTC disconnected: $reasonDetail.';
-        developer.log(human, name: 'UnderSound.WebRTC');
+        developer.log(human, name: 'ablaut.WebRTC');
 
         await _shutdownRoomOnly();
         _emitFailed(human);
@@ -320,7 +320,7 @@ class LiveKitService {
     if (event is TrackSubscribedEvent) {
       developer.log(
         'Track subscribed: ${event.participant.identity} (${event.track.kind}).',
-        name: 'UnderSound.WebRTC',
+        name: 'ablaut.WebRTC',
       );
       await _bootstrapAudioTrack(event.track);
 
@@ -344,7 +344,7 @@ class LiveKitService {
     if (event is TrackSubscriptionExceptionEvent) {
       final id = event.participant?.identity ?? 'unknown participant';
       final human = 'WebRTC subscribe failed ($id): ${event.reason}.';
-      developer.log(human, name: 'UnderSound.WebRTC');
+      developer.log(human, name: 'ablaut.WebRTC');
 
       await _shutdownRoomOnly();
       _emitFailed(human);
@@ -360,7 +360,7 @@ class LiveKitService {
     } catch (error, stackTrace) {
       developer.log(
         'Failed to update RemoteAudioTrack mute state.',
-        name: 'UnderSound.WebRTC',
+        name: 'ablaut.WebRTC',
         error: error,
         stackTrace: stackTrace,
       );
