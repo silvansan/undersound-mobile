@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:undersound_mobile/services/listener_link_parser.dart';
+import 'package:ablaut_app/services/listener_link_parser.dart';
 
 void main() {
   test('parses Studio v2 listener URLs', () {

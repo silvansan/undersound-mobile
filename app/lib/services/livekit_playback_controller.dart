@@ -23,13 +23,21 @@ class LiveKitPlaybackController {
   bool get hasActiveSession =>
       _activeLink != null && _activeChannelContext != null;
 
+  String? _listenerSessionToken;
+
   Future<void> connect({
     required ListenerLink link,
     required PublicChannelContext channelContext,
+    String? listenerSessionToken,
   }) async {
     _activeLink = link;
     _activeChannelContext = channelContext;
-    await _liveKitService.connect(link: link, channelContext: channelContext);
+    _listenerSessionToken = listenerSessionToken;
+    await _liveKitService.connect(
+      link: link,
+      channelContext: channelContext,
+      listenerSessionToken: listenerSessionToken,
+    );
   }
 
   Future<void> reconnectActiveSession() async {
@@ -38,7 +46,15 @@ class LiveKitPlaybackController {
     if (link == null || context == null) {
       return;
     }
-    await connect(link: link, channelContext: context);
+    await connect(
+      link: link,
+      channelContext: context,
+      listenerSessionToken: _listenerSessionToken,
+    );
+  }
+
+  void updateListenerSessionToken(String? token) {
+    _listenerSessionToken = token;
   }
 
   Future<void> disconnect({bool keepSession = false, String? message}) async {

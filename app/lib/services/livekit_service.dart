@@ -86,6 +86,7 @@ class LiveKitService {
   Future<void> connect({
     required ListenerLink link,
     required PublicChannelContext channelContext,
+    String? listenerSessionToken,
     String? roomNameOverride,
     String? participantIdentityOverride,
   }) async {
@@ -114,6 +115,7 @@ class LiveKitService {
       final cred = await _api.fetchListenerToken(
         link: link,
         identity: participantIdentityOverride,
+        listenerSessionToken: listenerSessionToken,
       );
       await _openRoom(link, channelContext, cred.url, cred.token);
     } on ApiException catch (e) {

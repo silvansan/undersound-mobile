@@ -77,7 +77,7 @@ class UnderSoundAudioService {
   UnderSoundAudioHandler get handler {
     final handler = _handler;
     if (handler == null) {
-      throw StateError('UnderSound audio service has not been initialized.');
+      throw StateError('ablaut audio service has not been initialized.');
     }
     return handler;
   }
@@ -92,8 +92,8 @@ class UnderSoundAudioService {
         webRtcController: webRtcController,
       ),
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.undersound.mobile.playback',
-        androidNotificationChannelName: 'UnderSound is playing',
+        androidNotificationChannelId: 'com.undersound.mobile.ablaut.playback',
+        androidNotificationChannelName: 'ablaut playback',
         androidNotificationIcon: 'mipmap/ic_launcher',
         androidNotificationOngoing: true,
         androidStopForegroundOnPause: true,
@@ -350,7 +350,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
       mediaItem.add(
         MediaItem(
           id: url.toString(),
-          title: 'UnderSound',
+          title: 'ablaut',
           album: request.channelContext.event.name,
           artist:
               '${request.channelContext.event.name} - ${request.channelContext.channel.name}',
@@ -363,7 +363,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
           url,
           tag: MediaItem(
             id: url.toString(),
-            title: 'UnderSound',
+            title: 'ablaut',
             album: request.channelContext.event.name,
             artist:
                 '${request.channelContext.event.name} - ${request.channelContext.channel.name}',
@@ -550,7 +550,7 @@ class UnderSoundAudioHandler extends BaseAudioHandler {
     mediaItem.add(
       MediaItem(
         id: link.originalUrl.toString(),
-        title: 'UnderSound',
+        title: 'ablaut',
         album: context.event.name,
         artist: '${context.event.name} - ${context.channel.name}',
         extras: {

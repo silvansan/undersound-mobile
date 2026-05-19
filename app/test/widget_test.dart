@@ -8,16 +8,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:undersound_mobile/main.dart';
+import 'package:ablaut_app/main.dart';
 
 void main() {
   testWidgets('Home screen opens', (WidgetTester tester) async {
-    await tester.pumpWidget(const UnderSoundMobileApp());
+    await tester.pumpWidget(const AblautApp());
 
-    expect(find.text('UnderSound Mobile'), findsOneWidget);
+    expect(find.text('ablaut'), findsOneWidget);
     expect(
       find.text(
-        'Join an UnderSound event, listen to live channel audio, and keep your favorite listener links ready.',
+        'Join live translated audio from an ablaut server, then keep your favorite listener links ready.',
       ),
       findsOneWidget,
     );

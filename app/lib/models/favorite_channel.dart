@@ -5,6 +5,9 @@ class FavoriteChannel {
     required this.url,
     required this.createdAt,
     required this.updatedAt,
+    this.listenerPasswordRequired = false,
+    this.listenerSessionToken,
+    this.sessionExpiresAt,
   });
 
   final String id;
@@ -12,6 +15,26 @@ class FavoriteChannel {
   final String url;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool listenerPasswordRequired;
+  final String? listenerSessionToken;
+  final DateTime? sessionExpiresAt;
+
+  bool get isPasswordProtected => listenerPasswordRequired;
+
+  String? get validListenerSessionToken {
+    final token = listenerSessionToken;
+    if (token == null || token.isEmpty) {
+      return null;
+    }
+    final expiresAt = sessionExpiresAt;
+    if (expiresAt == null) {
+      return token;
+    }
+    if (DateTime.now().isAfter(expiresAt.subtract(const Duration(minutes: 1)))) {
+      return null;
+    }
+    return token;
+  }
 
   FavoriteChannel copyWith({
     String? id,
@@ -19,6 +42,10 @@ class FavoriteChannel {
     String? url,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? listenerPasswordRequired,
+    String? listenerSessionToken,
+    DateTime? sessionExpiresAt,
+    bool clearSession = false,
   }) {
     return FavoriteChannel(
       id: id ?? this.id,
@@ -26,6 +53,13 @@ class FavoriteChannel {
       url: url ?? this.url,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      listenerPasswordRequired:
+          listenerPasswordRequired ?? this.listenerPasswordRequired,
+      listenerSessionToken: clearSession
+          ? null
+          : listenerSessionToken ?? this.listenerSessionToken,
+      sessionExpiresAt:
+          clearSession ? null : sessionExpiresAt ?? this.sessionExpiresAt,
     );
   }
 
@@ -36,6 +70,11 @@ class FavoriteChannel {
       'url': url,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      if (listenerPasswordRequired) 'listenerPasswordRequired': true,
+      if (listenerSessionToken != null && listenerSessionToken!.isNotEmpty)
+        'listenerSessionToken': listenerSessionToken,
+      if (sessionExpiresAt != null)
+        'sessionExpiresAt': sessionExpiresAt!.toIso8601String(),
     };
   }
 
@@ -43,12 +82,15 @@ class FavoriteChannel {
     final now = DateTime.now();
     return FavoriteChannel(
       id: json['id']?.toString() ?? '',
-      name: json['name']?.toString() ?? 'UnderSound channel',
+      name: json['name']?.toString() ?? 'ablaut channel',
       url: json['url']?.toString() ?? '',
-      createdAt:
-          DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? now,
-      updatedAt:
-          DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? now,
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? now,
+      updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '') ?? now,
+      listenerPasswordRequired: json['listenerPasswordRequired'] == true,
+      listenerSessionToken: json['listenerSessionToken']?.toString(),
+      sessionExpiresAt: DateTime.tryParse(
+        json['sessionExpiresAt']?.toString() ?? '',
+      ),
     );
   }
 }

@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../models/favorite_channel.dart';
 import '../services/favorites_service.dart';
+import '../services/listener_channel_launcher.dart';
 import '../services/listener_link_parser.dart';
+import '../services/listener_session_coordinator.dart';
 import '../services/undersound_api_client.dart';
 import 'edit_favorite_screen.dart';
-import 'player_screen.dart';
 import 'scan_qr_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
@@ -17,7 +18,9 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final _favoritesService = const FavoritesService();
+  final _launcher = const ListenerChannelLauncher();
   final _api = const UnderSoundApiClient();
+  final _sessionCoordinator = const ListenerSessionCoordinator();
 
   List<FavoriteChannel> _favorites = const [];
   String? _error;
@@ -58,20 +61,19 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     });
     try {
       final link = ListenerLinkParser.parse(favorite.url);
-      final channelContext = await _api.loadPublicChannel(link);
-      if (!mounted) {
-        return;
-      }
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) =>
-              PlayerScreen(link: link, channelContext: channelContext),
-        ),
+      await _launcher.openChannel(
+        context: context,
+        link: link,
+        favorite: favorite,
       );
       if (mounted) {
         await _loadFavorites();
       }
     } on FormatException catch (error) {
+      if (mounted) {
+        setState(() => _error = error.message);
+      }
+    } on ListenerAccessException catch (error) {
       if (mounted) {
         setState(() => _error = error.message);
       }
@@ -82,6 +84,37 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     } finally {
       if (mounted) {
         setState(() => _openingId = null);
+      }
+    }
+  }
+
+  Future<void> _changeFavoritePassword(FavoriteChannel favorite) async {
+    setState(() => _error = null);
+    try {
+      final link = ListenerLinkParser.parse(favorite.url);
+      final channelContext = await _api.loadPublicChannel(link);
+      if (!mounted) {
+        return;
+      }
+      await _sessionCoordinator.changeStoredPassword(
+        context: context,
+        link: link,
+        channelContext: channelContext,
+        favorite: favorite,
+      );
+      if (mounted) {
+        await _loadFavorites();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Listener password updated')),
+        );
+      }
+    } on ListenerAccessException catch (error) {
+      if (mounted) {
+        setState(() => _error = error.message);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = error.toString());
       }
     }
   }
@@ -193,7 +226,11 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.headphones_rounded),
+                          : Icon(
+                              favorite.isPasswordProtected
+                                  ? Icons.lock_rounded
+                                  : Icons.headphones_rounded,
+                            ),
                     ),
                     title: Text(favorite.name),
                     subtitle: Text(
@@ -209,19 +246,29 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         switch (action) {
                           case _FavoriteAction.edit:
                             _editFavorite(favorite);
+                          case _FavoriteAction.changePassword:
+                            _changeFavoritePassword(favorite);
                           case _FavoriteAction.delete:
                             _confirmDelete(favorite);
                         }
                       },
-                      itemBuilder: (context) => const [
-                        PopupMenuItem(
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
                           value: _FavoriteAction.edit,
                           child: ListTile(
                             leading: Icon(Icons.edit_rounded),
                             title: Text('Edit'),
                           ),
                         ),
-                        PopupMenuItem(
+                        if (favorite.isPasswordProtected)
+                          const PopupMenuItem(
+                            value: _FavoriteAction.changePassword,
+                            child: ListTile(
+                              leading: Icon(Icons.lock_reset_rounded),
+                              title: Text('Change listener password'),
+                            ),
+                          ),
+                        const PopupMenuItem(
                           value: _FavoriteAction.delete,
                           child: ListTile(
                             leading: Icon(Icons.delete_outline_rounded),
@@ -241,7 +288,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 }
 
-enum _FavoriteAction { edit, delete }
+enum _FavoriteAction { edit, changePassword, delete }
 
 class _EmptyFavorites extends StatelessWidget {
   const _EmptyFavorites({required this.onAdd});

@@ -12,6 +12,7 @@ import '../services/livekit_playback_controller.dart';
 import '../services/livekit_service.dart';
 import '../services/stream_connection_service.dart';
 import '../services/undersound_audio_service.dart';
+import '../services/listener_session_coordinator.dart';
 import '../services/undersound_api_client.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -19,10 +20,12 @@ class PlayerScreen extends StatefulWidget {
     super.key,
     required this.link,
     required this.channelContext,
+    this.listenerSessionToken,
   });
 
   final ListenerLink link;
   final PublicChannelContext channelContext;
+  final String? listenerSessionToken;
 
   @override
   State<PlayerScreen> createState() => _PlayerScreenState();
@@ -32,7 +35,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   final _hlsService = HlsService();
   final _powerService = const AndroidPowerService();
   final _favoritesService = const FavoritesService();
+  final _sessionCoordinator = const ListenerSessionCoordinator();
   late final UnderSoundAudioHandler _audioHandler;
+  late String? _listenerSessionToken;
   late final LiveKitPlaybackController _webRtcController;
 
   StreamSubscription<UnderSoundPlaybackSnapshot>? _snapshotSubscription;
@@ -59,6 +64,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   void initState() {
     super.initState();
+    _listenerSessionToken = widget.listenerSessionToken;
     _audioHandler = UnderSoundAudioService.instance.handler;
     _webRtcController = UnderSoundAudioService.instance.webRtcController;
 
@@ -155,6 +161,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
         name:
             '${widget.channelContext.event.name} - ${widget.channelContext.channel.name}',
         url: _listenerUrl,
+        listenerPasswordRequired:
+            widget.channelContext.access.listenerPasswordRequired,
+        listenerSessionToken: _listenerSessionToken,
       );
       if (!mounted) {
         return;
@@ -335,11 +344,35 @@ class _PlayerScreenState extends State<PlayerScreen> {
     setState(() => _webrtcBusy = true);
     try {
       await _powerService.requestPostNotificationsPermission();
-      await _webRtcController.connect(
-        link: widget.link,
-        channelContext: widget.channelContext,
-      );
+      await _connectWebRtc();
     } on ApiException catch (e) {
+      if (e.statusCode == 403 &&
+          widget.channelContext.access.listenerPasswordRequired &&
+          mounted) {
+        try {
+          await _favoritesService.clearListenerSession(_listenerUrl);
+          final refreshed = await _sessionCoordinator.resolveSessionToken(
+            context: context,
+            link: widget.link,
+            channelContext: widget.channelContext,
+            persistForFavorite: true,
+          );
+          if (!mounted) {
+            return;
+          }
+          setState(() => _listenerSessionToken = refreshed);
+          _webRtcController.updateListenerSessionToken(refreshed);
+          await _connectWebRtc();
+          return;
+        } on ListenerAccessException catch (accessError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(accessError.message)),
+            );
+          }
+          return;
+        }
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.message)),
@@ -375,6 +408,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
     await _toggleWebRtcPlayback();
   }
 
+  Future<void> _connectWebRtc() {
+    return _webRtcController.connect(
+      link: widget.link,
+      channelContext: widget.channelContext,
+      listenerSessionToken: _listenerSessionToken,
+    );
+  }
+
   Future<void> _toggleWebRtcMute() async {
     await _webRtcController.toggleMuted();
   }
@@ -400,7 +441,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         return AlertDialog(
           title: const Text('Keep audio playing'),
           content: const Text(
-            'To keep audio playing while your screen is off, please allow UnderSound to ignore battery optimizations.',
+            'To keep audio playing while your screen is off, please allow ablaut to ignore battery optimizations.',
           ),
           actions: [
             TextButton(

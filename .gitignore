@@ -21,6 +21,16 @@ app/macos/
 Thumbs.db
 Desktop.ini
 
+# Superseded local brand source assets.
+UnderSound-Logo.png
+ablaut-Logo-transparent.png
+ablaut-Logo.ico
+/ablaut-logo.png
+MOBILE_ABLAUT_REBRAND.md
+
+# Local website/marketing copy (not part of the app repo).
+wordpress-download-page.md
+
 # Secrets and local signing material. Never commit these.
 .env
 .env.*

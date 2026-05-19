@@ -1,3 +1,5 @@
+import 'public_listener_access.dart';
+
 class PublicEvent {
   const PublicEvent({
     required this.id,
@@ -15,7 +17,7 @@ class PublicEvent {
     return PublicEvent(
       id: (json['id'] ?? json['slug'] ?? '').toString(),
       slug: (json['slug'] ?? json['id'] ?? '').toString(),
-      name: (json['title'] ?? json['name'] ?? 'UnderSound').toString(),
+      name: (json['title'] ?? json['name'] ?? 'ablaut').toString(),
       description: (json['description'] ??
               json['publicDescription'] ??
               json['location'] ??
@@ -89,27 +91,36 @@ class PublicChannelContext {
     required this.channel,
     required this.livekit,
     required this.logoUrl,
+    required this.access,
   });
 
   final PublicEvent event;
   final PublicChannel channel;
   final PublicLiveKitContext livekit;
   final String logoUrl;
+  final PublicListenerAccess access;
 
   factory PublicChannelContext.fromJson(Map<String, dynamic> json) {
     return PublicChannelContext(
-      event: PublicEvent.fromJson(
-        json['event'] as Map<String, dynamic>? ?? const {},
-      ),
-      channel: PublicChannel.fromJson(
-        json['channel'] as Map<String, dynamic>? ?? const {},
-      ),
-      livekit: PublicLiveKitContext.fromJson(
-        json['livekit'] as Map<String, dynamic>? ?? const {},
-      ),
+      event: PublicEvent.fromJson(_asStringKeyedMap(json['event'])),
+      channel: PublicChannel.fromJson(_asStringKeyedMap(json['channel'])),
+      livekit: PublicLiveKitContext.fromJson(_asStringKeyedMap(json['livekit'])),
       logoUrl: json['logoUrl']?.toString() ?? '',
+      access: PublicListenerAccess.fromJson(
+        json['access'] is Map ? _asStringKeyedMap(json['access']) : null,
+      ),
     );
   }
+}
+
+Map<String, dynamic> _asStringKeyedMap(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return value;
+  }
+  if (value is Map) {
+    return Map<String, dynamic>.from(value);
+  }
+  return const {};
 }
 
 class HlsStatus {

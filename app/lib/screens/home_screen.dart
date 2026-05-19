@@ -5,7 +5,7 @@ import 'favorites_screen.dart';
 import 'scan_qr_screen.dart';
 
 const _appVersionLabel = 'Version 0.2.1';
-const _githubRepositoryUrl = 'https://github.com/silvansan/UnderSound-Mobile';
+const _githubRepositoryUrl = 'https://github.com/silvansan/ablaut-App';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -23,14 +23,14 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Center(
               child: Image.asset(
-                'assets/UnderSound-Logo.png',
+                'assets/ablaut-logo.png',
                 height: 90,
                 fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              'UnderSound Mobile',
+              'ablaut',
               textAlign: TextAlign.center,
               style: textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w700,
@@ -38,7 +38,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Join an UnderSound event, listen to live channel audio, and keep your favorite listener links ready.',
+              'Join live translated audio from an ablaut server, then keep your favorite listener links ready.',
               textAlign: TextAlign.center,
               style: textTheme.bodyLarge?.copyWith(
                 color: colorScheme.onSurfaceVariant,

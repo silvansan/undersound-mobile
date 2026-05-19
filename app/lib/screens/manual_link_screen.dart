@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/listener_link.dart';
-import '../models/public_channel.dart';
-import '../services/favorites_service.dart';
+import '../services/listener_channel_launcher.dart';
 import '../services/listener_link_parser.dart';
-import '../services/undersound_api_client.dart';
-import 'player_screen.dart';
+import '../services/listener_session_coordinator.dart';
 
 class ManualLinkScreen extends StatefulWidget {
   const ManualLinkScreen({
@@ -21,8 +18,7 @@ class ManualLinkScreen extends StatefulWidget {
 
 class _ManualLinkScreenState extends State<ManualLinkScreen> {
   final _controller = TextEditingController();
-  final _api = const UnderSoundApiClient();
-  final _favoritesService = const FavoritesService();
+  final _launcher = const ListenerChannelLauncher();
   bool _loading = false;
   String? _error;
 
@@ -40,16 +36,15 @@ class _ManualLinkScreenState extends State<ManualLinkScreen> {
 
     try {
       final link = ListenerLinkParser.parse(_controller.text);
-      final channelContext = await _api.loadPublicChannel(link);
-      if (widget.addConnectedChannelToFavorites) {
-        await _favoritesService.addFavorite(
-          name: '${channelContext.event.name} - ${channelContext.channel.name}',
-          url: link.originalUrl.toString(),
-        );
-      }
-      if (!mounted) return;
-      _openPlayer(link, channelContext);
+      await _launcher.openChannel(
+        context: context,
+        link: link,
+        addToFavorites: widget.addConnectedChannelToFavorites,
+        replaceCurrentRoute: true,
+      );
     } on FormatException catch (error) {
+      setState(() => _error = error.message);
+    } on ListenerAccessException catch (error) {
       setState(() => _error = error.message);
     } catch (error) {
       setState(() => _error = error.toString());
@@ -58,15 +53,6 @@ class _ManualLinkScreenState extends State<ManualLinkScreen> {
         setState(() => _loading = false);
       }
     }
-  }
-
-  void _openPlayer(ListenerLink link, PublicChannelContext channelContext) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) =>
-            PlayerScreen(link: link, channelContext: channelContext),
-      ),
-    );
   }
 
   @override

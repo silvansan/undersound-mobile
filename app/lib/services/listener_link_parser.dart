@@ -4,7 +4,7 @@ class ListenerLinkParser {
   static ListenerLink parse(String input) {
     final trimmed = input.trim();
     if (trimmed.isEmpty) {
-      throw const FormatException('Enter an UnderSound listener link.');
+      throw const FormatException('Enter an ablaut listener link.');
     }
 
     final uri = Uri.tryParse(trimmed);
@@ -35,7 +35,7 @@ class ListenerLinkParser {
     final eventIndex = segments.indexOf('e');
     if (eventIndex == -1 || segments.length <= eventIndex + 3) {
       throw const FormatException(
-        'This does not look like an UnderSound listener link.',
+        'This does not look like an ablaut listener link.',
       );
     }
 

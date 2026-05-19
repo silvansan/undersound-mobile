@@ -3,7 +3,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/listener_link.dart';
+import '../models/listener_verify_password_response.dart';
 import '../models/public_channel.dart';
+import '../models/public_listener_access.dart';
+import 'listener_access_messages.dart';
 
 class UnderSoundApiClient {
   const UnderSoundApiClient({http.Client? httpClient})
@@ -22,17 +25,59 @@ class UnderSoundApiClient {
     return PublicChannelContext.fromJson(json);
   }
 
+  Future<ListenerVerifyPasswordResponse> verifyListenerPassword({
+    required ListenerLink link,
+    required String password,
+    PublicListenerAccess? access,
+  }) async {
+    final accessMeta = access ?? PublicListenerAccess.publicDefault();
+    final uri = accessMeta.verifyPasswordUri(link.serverUrl);
+    final response = await _postJson(
+      uri,
+      {
+        'eventSlug': link.eventSlug,
+        'channelSlug': link.channelSlug,
+        'password': password,
+      },
+    );
+    if (response.statusCode == 401) {
+      throw const ApiException(
+        ListenerAccessMessages.wrongPassword,
+        statusCode: 401,
+      );
+    }
+    final json = _decode(response);
+    return ListenerVerifyPasswordResponse.fromJson(json);
+  }
+
   /// Obtains temporary subscribe-only LiveKit join credentials.
   Future<LiveKitTokenResponse> fetchListenerToken({
     required ListenerLink link,
     String? identity,
+    String? listenerSessionToken,
   }) async {
     final uri = link.serverUrl.replace(path: '/api/livekit/listener-token');
-    final response = await _postJson(uri, {
-      'eventSlug': link.eventSlug,
-      'channelSlug': link.channelSlug,
-      if (identity != null && identity.isNotEmpty) 'identity': identity,
-    });
+    final headers = <String, String>{};
+    if (listenerSessionToken != null && listenerSessionToken.isNotEmpty) {
+      headers['X-Ablaut-Listener-Session'] = listenerSessionToken;
+    }
+    final response = await _postJson(
+      uri,
+      {
+        'eventSlug': link.eventSlug,
+        'channelSlug': link.channelSlug,
+        if (identity != null && identity.isNotEmpty) 'identity': identity,
+        if (listenerSessionToken != null && listenerSessionToken.isNotEmpty)
+          'listenerSessionToken': listenerSessionToken,
+      },
+      headers: headers,
+    );
+    if (response.statusCode == 403) {
+      throw const ApiException(
+        ListenerAccessMessages.sessionExpired,
+        statusCode: 403,
+      );
+    }
     final json = _decode(response);
     return LiveKitTokenResponse.fromJson(json);
   }
@@ -42,7 +87,7 @@ class UnderSoundApiClient {
       playlistUrl.replace(
         queryParameters: {
           ...playlistUrl.queryParameters,
-          '_undersound': DateTime.now().millisecondsSinceEpoch.toString(),
+          '_cacheBust': DateTime.now().millisecondsSinceEpoch.toString(),
         },
       ),
     );
@@ -57,13 +102,20 @@ class UnderSoundApiClient {
     return client == null ? http.get(uri) : client.get(uri);
   }
 
-  Future<http.Response> _postJson(Uri uri, Map<String, dynamic> body) {
+  Future<http.Response> _postJson(
+    Uri uri,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+  }) {
     final client = _httpClient;
     final encoded = jsonEncode(body);
-    final headers = {'Content-Type': 'application/json'};
+    final requestHeaders = {
+      'Content-Type': 'application/json',
+      ...?headers,
+    };
     return client == null
-        ? http.post(uri, headers: headers, body: encoded)
-        : client.post(uri, headers: headers, body: encoded);
+        ? http.post(uri, headers: requestHeaders, body: encoded)
+        : client.post(uri, headers: requestHeaders, body: encoded);
   }
 
   Map<String, dynamic> _decode(http.Response response) {
@@ -72,7 +124,10 @@ class UnderSoundApiClient {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final message =
           decoded is Map<String, dynamic> ? decoded['error']?.toString() : null;
-      throw ApiException(message ?? 'Server returned ${response.statusCode}.');
+      throw ApiException(
+        message ?? 'Server returned ${response.statusCode}.',
+        statusCode: response.statusCode,
+      );
     }
     if (decoded is! Map<String, dynamic>) {
       throw const ApiException('Server response was not valid.');
@@ -116,9 +171,10 @@ class HlsPlaylistInspection {
 }
 
 class ApiException implements Exception {
-  const ApiException(this.message);
+  const ApiException(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
 
   @override
   String toString() => message;

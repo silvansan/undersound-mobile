@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../services/favorites_service.dart';
+import '../services/listener_channel_launcher.dart';
 import '../services/listener_link_parser.dart';
-import '../services/undersound_api_client.dart';
+import '../services/listener_session_coordinator.dart';
 import 'manual_link_screen.dart';
-import 'player_screen.dart';
 
 class ScanQrScreen extends StatefulWidget {
   const ScanQrScreen({
@@ -21,8 +20,7 @@ class ScanQrScreen extends StatefulWidget {
 }
 
 class _ScanQrScreenState extends State<ScanQrScreen> {
-  final _api = const UnderSoundApiClient();
-  final _favoritesService = const FavoritesService();
+  final _launcher = const ListenerChannelLauncher();
   final _imagePicker = ImagePicker();
 
   late final MobileScannerController _scannerController =
@@ -43,25 +41,17 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
     try {
       final link = ListenerLinkParser.parse(rawValue.trim());
-      final channelContext = await _api.loadPublicChannel(link);
-      if (widget.addScannedChannelToFavorites) {
-        await _favoritesService.addFavorite(
-          name: '${channelContext.event.name} - ${channelContext.channel.name}',
-          url: link.originalUrl.toString(),
-        );
-      }
-
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => PlayerScreen(
-            link: link,
-            channelContext: channelContext,
-          ),
-        ),
+      await _launcher.openChannel(
+        context: context,
+        link: link,
+        addToFavorites: widget.addScannedChannelToFavorites,
+        replaceCurrentRoute: true,
       );
     } on FormatException catch (error) {
+      if (mounted) {
+        setState(() => _error = error.message);
+      }
+    } on ListenerAccessException catch (error) {
       if (mounted) {
         setState(() => _error = error.message);
       }
@@ -162,7 +152,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
                     Text(
                       _loading
                           ? 'Loading event...'
-                          : 'Point the camera at an UnderSound listener QR code.',
+                          : 'Point the camera at an ablaut listener QR code.',
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 8),
