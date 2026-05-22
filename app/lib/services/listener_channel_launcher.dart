@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/favorite_channel.dart';
 import '../models/listener_link.dart';
+import '../screens/event_channels_screen.dart';
 import '../screens/player_screen.dart';
 import 'favorites_service.dart';
 import 'listener_session_coordinator.dart';
@@ -20,18 +21,61 @@ class ListenerChannelLauncher {
   final ListenerSessionCoordinator _coordinator;
   final FavoritesService _favoritesService;
 
-  Future<void> openChannel({
+  Future<void> openLink({
     required BuildContext context,
     required ListenerLink link,
     FavoriteChannel? favorite,
     bool addToFavorites = false,
     bool replaceCurrentRoute = false,
   }) async {
+    if (link.isEventDirectory) {
+      final screen = EventChannelsScreen(
+        link: link,
+        replaceCurrentRoute: replaceCurrentRoute,
+      );
+      final route = MaterialPageRoute(builder: (_) => screen);
+      if (replaceCurrentRoute) {
+        await Navigator.of(context).pushReplacement(route);
+      } else {
+        await Navigator.of(context).push(route);
+      }
+      return;
+    }
+
+    await openChannel(
+      context: context,
+      link: link,
+      favorite: favorite,
+      addToFavorites: addToFavorites,
+      replaceCurrentRoute: replaceCurrentRoute,
+    );
+  }
+
+  Future<void> openChannel({
+    required BuildContext context,
+    required ListenerLink link,
+    FavoriteChannel? favorite,
+    bool addToFavorites = false,
+    bool replaceCurrentRoute = false,
+    String? eventListenerSessionToken,
+  }) async {
+    if (link.isEventDirectory) {
+      await openLink(
+        context: context,
+        link: link,
+        favorite: favorite,
+        addToFavorites: addToFavorites,
+        replaceCurrentRoute: replaceCurrentRoute,
+      );
+      return;
+    }
+
     final channelContext = await _api.loadPublicChannel(link);
     _coordinator.ensureChannelAccessible(channelContext);
 
     String? listenerSessionToken;
-    if (channelContext.access.listenerPasswordRequired) {
+    if (channelContext.access.listenerPasswordRequired &&
+        eventListenerSessionToken == null) {
       listenerSessionToken = await _coordinator.resolveSessionToken(
         context: context,
         link: link,
@@ -60,6 +104,7 @@ class ListenerChannelLauncher {
       link: link,
       channelContext: channelContext,
       listenerSessionToken: listenerSessionToken,
+      eventListenerSessionToken: eventListenerSessionToken,
     );
     final route = MaterialPageRoute(builder: (_) => player);
     if (replaceCurrentRoute) {

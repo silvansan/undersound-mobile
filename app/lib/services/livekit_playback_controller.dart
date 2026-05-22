@@ -24,19 +24,23 @@ class LiveKitPlaybackController {
       _activeLink != null && _activeChannelContext != null;
 
   String? _listenerSessionToken;
+  String? _eventListenerSessionToken;
 
   Future<void> connect({
     required ListenerLink link,
     required PublicChannelContext channelContext,
     String? listenerSessionToken,
+    String? eventListenerSessionToken,
   }) async {
     _activeLink = link;
     _activeChannelContext = channelContext;
     _listenerSessionToken = listenerSessionToken;
+    _eventListenerSessionToken = eventListenerSessionToken;
     await _liveKitService.connect(
       link: link,
       channelContext: channelContext,
       listenerSessionToken: listenerSessionToken,
+      eventListenerSessionToken: eventListenerSessionToken,
     );
   }
 
@@ -50,6 +54,7 @@ class LiveKitPlaybackController {
       link: link,
       channelContext: context,
       listenerSessionToken: _listenerSessionToken,
+      eventListenerSessionToken: _eventListenerSessionToken,
     );
   }
 

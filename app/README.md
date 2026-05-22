@@ -1,6 +1,6 @@
 # ablaut mobile app
 
-Flutter listener client for ablaut server deployments.
+Flutter listener client for [ablaut server](https://github.com/silvansan/ablaut-Studio) deployments.
 
 ## Playback
 
@@ -14,13 +14,17 @@ Public metadata is loaded with:
 
 `GET /api/public/listen/:eventSlug/:channelSlug`
 
+Event directory (when `unifiedListenerQrEnabled` is on):
+
+`GET /api/public/listen/:eventSlug`
+
 The response includes an `access` block. When `listenerPasswordRequired` is true, the app calls:
 
 `POST /api/listener/verify-password`
 
 and sends the returned `listenerSessionToken` to the listener-token endpoint (body field and/or `X-Ablaut-Listener-Session` header).
 
-Legacy listener URL shapes remain supported (`/listen/...`, `/listener/...`, `/e/.../listen`, `undersound://`).
+Legacy listener URL shapes remain supported (`/listen/...`, `/listener/...`, `/listen/{event}` for event directories, `/e/.../listen`, `undersound://`).
 
 ## Getting started
 

@@ -41,7 +41,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
 
     try {
       final link = ListenerLinkParser.parse(rawValue.trim());
-      await _launcher.openChannel(
+      await _launcher.openLink(
         context: context,
         link: link,
         addToFavorites: widget.addScannedChannelToFavorites,

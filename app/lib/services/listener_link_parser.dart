@@ -12,7 +12,6 @@ class ListenerLinkParser {
       throw const FormatException('Enter a complete link, including https://.');
     }
 
-    // Legacy deep-link scheme from pre-ablaut deployments.
     if (uri.scheme == 'undersound') {
       return _parseCustomScheme(uri);
     }
@@ -23,8 +22,16 @@ class ListenerLinkParser {
 
     final segments = uri.pathSegments;
     final firstSegment = segments.isEmpty ? '' : segments[0].toLowerCase();
-    if (segments.length >= 3 &&
+    if (segments.length >= 2 &&
         (firstSegment == 'listen' || firstSegment == 'listener')) {
+      if (segments.length == 2) {
+        return ListenerLink(
+          serverUrl: _origin(uri),
+          eventSlug: segments[1],
+          originalUrl: uri,
+        );
+      }
+
       return ListenerLink(
         serverUrl: _origin(uri),
         eventSlug: segments[1],
@@ -34,24 +41,31 @@ class ListenerLinkParser {
     }
 
     final eventIndex = segments.indexOf('e');
-    if (eventIndex == -1 || segments.length <= eventIndex + 3) {
-      throw const FormatException(
-        'This does not look like an ablaut listener link.',
-      );
+    if (eventIndex != -1 && segments.length > eventIndex + 2) {
+      final page = segments[eventIndex + 2].toLowerCase();
+      if (page == 'listen') {
+        return ListenerLink(
+          serverUrl: _origin(uri),
+          eventSlug: segments[eventIndex + 1],
+          originalUrl: uri,
+        );
+      }
+
+      if (segments.length > eventIndex + 3) {
+        final legacyPage = segments[eventIndex + 3].toLowerCase();
+        if (legacyPage == 'listen') {
+          return ListenerLink(
+            serverUrl: _origin(uri),
+            eventSlug: segments[eventIndex + 1],
+            channelSlug: segments[eventIndex + 2],
+            originalUrl: uri,
+          );
+        }
+      }
     }
 
-    final page = segments[eventIndex + 3].toLowerCase();
-    if (page != 'listen') {
-      throw const FormatException(
-        'Use a listener link, not a speaker or admin link.',
-      );
-    }
-
-    return ListenerLink(
-      serverUrl: _origin(uri),
-      eventSlug: segments[eventIndex + 1],
-      channelSlug: segments[eventIndex + 2],
-      originalUrl: uri,
+    throw const FormatException(
+      'This does not look like an ablaut listener link.',
     );
   }
 
@@ -64,16 +78,14 @@ class ListenerLinkParser {
     if (serverUri == null || !serverUri.hasScheme || serverUri.host.isEmpty) {
       throw const FormatException('The app link is missing a valid server.');
     }
-    if (event.isEmpty || channel.isEmpty) {
-      throw const FormatException(
-        'The app link is missing event or channel data.',
-      );
+    if (event.isEmpty) {
+      throw const FormatException('The app link is missing event data.');
     }
 
     return ListenerLink(
       serverUrl: _origin(serverUri),
       eventSlug: event,
-      channelSlug: channel,
+      channelSlug: channel.isEmpty ? null : channel,
       originalUrl: uri,
     );
   }

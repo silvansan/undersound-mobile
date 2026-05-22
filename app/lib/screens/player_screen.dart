@@ -21,11 +21,13 @@ class PlayerScreen extends StatefulWidget {
     required this.link,
     required this.channelContext,
     this.listenerSessionToken,
+    this.eventListenerSessionToken,
   });
 
   final ListenerLink link;
   final PublicChannelContext channelContext;
   final String? listenerSessionToken;
+  final String? eventListenerSessionToken;
 
   @override
   State<PlayerScreen> createState() => _PlayerScreenState();
@@ -413,6 +415,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       link: widget.link,
       channelContext: widget.channelContext,
       listenerSessionToken: _listenerSessionToken,
+      eventListenerSessionToken: widget.eventListenerSessionToken,
     );
   }
 
@@ -494,11 +497,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   String get _listenerUrl {
+    final channelSlug = widget.link.channelSlug;
+    if (channelSlug == null || channelSlug.isEmpty) {
+      return widget.link.serverUrl.replace(
+        pathSegments: ['listen', widget.link.eventSlug],
+      ).toString();
+    }
+
     return widget.link.serverUrl.replace(
       pathSegments: [
         'listen',
         widget.link.eventSlug,
-        widget.link.channelSlug,
+        channelSlug,
       ],
     ).toString();
   }

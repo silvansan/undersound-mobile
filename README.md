@@ -2,21 +2,28 @@
 
 # ablaut-App
 
-ablaut lets listeners join live translated audio from an ablaut server.
+ablaut lets listeners join live translated audio from an [ablaut server](https://github.com/silvansan/ablaut-Studio) deployment.
 
 Scan an ablaut listener QR code, open a saved favorite, or paste a listener link, then listen through your phone or Bluetooth headphones.
 
-## Download
+## Download (Android)
 
-[Download the latest Android APK](https://github.com/silvansan/ablaut-App/releases/latest/download/app-release.apk)
+Install the latest APK from [GitHub Releases](https://github.com/silvansan/ablaut-App/releases/latest):
 
-After downloading, Android may ask you to allow installation from your browser or file manager.
+**[Download app-release.apk](https://github.com/silvansan/ablaut-App/releases/latest/download/app-release.apk)**
 
-## Audio source
+After downloading, Android may ask you to allow installation from your browser or file manager. This app is distributed via GitHub (sideload), not the Google Play Store.
 
-This app is the mobile listener companion for the [ablaut server](https://github.com/silvansan/UnderSound-Studio) (UnderSound-Studio repo).
+Older releases used different APK file names; the current release asset is always **`app-release.apk`** so the link above stays stable.
 
-Use the server to host events, publish live audio channels, and generate listener QR codes for this app.
+## Server
+
+This repo is the **mobile listener** companion for the **[ablaut server](https://github.com/silvansan/ablaut-Studio)** — host events, publish live audio channels, and generate listener QR codes there.
+
+| Repo | Role |
+|------|------|
+| [ablaut-Studio](https://github.com/silvansan/ablaut-Studio) | ablaut server — dashboard, LiveKit/HLS publishing |
+| [ablaut-App](https://github.com/silvansan/ablaut-App) | Android / iOS listener app (this repo) |
 
 ablaut remains compatible with listener links from older deployments, including legacy `/e/.../listen` URLs and `undersound://` deep links.
 
@@ -38,4 +45,4 @@ Camera access is used only for QR scanning. Listener passwords can be stored loc
 
 ## Development
 
-See [app/README.md](app/README.md) for Flutter setup, build commands, and API notes.
+See [app/README.md](app/README.md) for Flutter setup, Android/iOS release builds, and API notes.

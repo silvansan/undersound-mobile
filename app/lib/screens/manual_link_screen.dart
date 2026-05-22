@@ -36,7 +36,7 @@ class _ManualLinkScreenState extends State<ManualLinkScreen> {
 
     try {
       final link = ListenerLinkParser.parse(_controller.text);
-      await _launcher.openChannel(
+      await _launcher.openLink(
         context: context,
         link: link,
         addToFavorites: widget.addConnectedChannelToFavorites,

@@ -61,7 +61,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     });
     try {
       final link = ListenerLinkParser.parse(favorite.url);
-      await _launcher.openChannel(
+      await _launcher.openLink(
         context: context,
         link: link,
         favorite: favorite,

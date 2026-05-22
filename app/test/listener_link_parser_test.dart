@@ -2,6 +2,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ablaut_app/services/listener_link_parser.dart';
 
 void main() {
+  test('parses event-only listener URLs', () {
+    final link = ListenerLinkParser.parse(
+      'https://voice.example.com/listen/default-event',
+    );
+
+    expect(link.serverUrl.toString(), 'https://voice.example.com');
+    expect(link.eventSlug, 'default-event');
+    expect(link.channelSlug, isNull);
+    expect(link.isEventDirectory, isTrue);
+  });
+
+  test('parses legacy event-only listener URLs', () {
+    final link = ListenerLinkParser.parse(
+      'https://voice.example.com/e/default-event/listen',
+    );
+
+    expect(link.eventSlug, 'default-event');
+    expect(link.channelSlug, isNull);
+    expect(link.isEventDirectory, isTrue);
+  });
+
   test('parses Studio v2 listener URLs', () {
     final link = ListenerLinkParser.parse(
       'https://voice.example.com/listen/default-event/en',

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/event_directory.dart';
 import '../models/listener_link.dart';
 import '../models/listener_verify_password_response.dart';
 import '../models/public_channel.dart';
@@ -15,9 +16,14 @@ class AblautApiClient {
   final http.Client? _httpClient;
 
   Future<PublicChannelContext> loadPublicChannel(ListenerLink link) async {
+    final channelSlug = link.channelSlug;
+    if (channelSlug == null || channelSlug.isEmpty) {
+      throw const ApiException('A channel slug is required for this link.');
+    }
+
     final uri = link.serverUrl.replace(
       path:
-          '/api/public/listen/${Uri.encodeComponent(link.eventSlug)}/${Uri.encodeComponent(link.channelSlug)}',
+          '/api/public/listen/${Uri.encodeComponent(link.eventSlug)}/${Uri.encodeComponent(channelSlug)}',
     );
 
     final response = await _get(uri);
@@ -25,18 +31,56 @@ class AblautApiClient {
     return PublicChannelContext.fromJson(json);
   }
 
+  Future<EventDirectoryContext> loadEventDirectory(ListenerLink link) async {
+    final uri = link.serverUrl.replace(
+      path: '/api/public/listen/${Uri.encodeComponent(link.eventSlug)}',
+    );
+
+    final response = await _get(uri);
+    final json = _decode(response);
+    return EventDirectoryContext.fromJson(json);
+  }
+
+  Future<ListenerVerifyPasswordResponse> verifyEventDirectoryPassword({
+    required ListenerLink link,
+    required String password,
+  }) async {
+    final uri = link.serverUrl.replace(path: '/api/listener/verify-password');
+    final response = await _postJson(
+      uri,
+      {
+        'directory': true,
+        'eventSlug': link.eventSlug,
+        'password': password,
+      },
+    );
+    if (response.statusCode == 401) {
+      throw const ApiException(
+        ListenerAccessMessages.wrongPassword,
+        statusCode: 401,
+      );
+    }
+    final json = _decode(response);
+    return ListenerVerifyPasswordResponse.fromJson(json);
+  }
+
   Future<ListenerVerifyPasswordResponse> verifyListenerPassword({
     required ListenerLink link,
     required String password,
     PublicListenerAccess? access,
   }) async {
+    final channelSlug = link.channelSlug;
+    if (channelSlug == null || channelSlug.isEmpty) {
+      throw const ApiException('A channel slug is required to verify this password.');
+    }
+
     final accessMeta = access ?? PublicListenerAccess.publicDefault();
     final uri = accessMeta.verifyPasswordUri(link.serverUrl);
     final response = await _postJson(
       uri,
       {
         'eventSlug': link.eventSlug,
-        'channelSlug': link.channelSlug,
+        'channelSlug': channelSlug,
         'password': password,
       },
     );
@@ -55,7 +99,13 @@ class AblautApiClient {
     required ListenerLink link,
     String? identity,
     String? listenerSessionToken,
+    String? eventListenerSessionToken,
   }) async {
+    final channelSlug = link.channelSlug;
+    if (channelSlug == null || channelSlug.isEmpty) {
+      throw const ApiException('A channel slug is required for playback.');
+    }
+
     final uri = link.serverUrl.replace(path: '/api/livekit/listener-token');
     final headers = <String, String>{};
     if (listenerSessionToken != null && listenerSessionToken.isNotEmpty) {
@@ -65,10 +115,13 @@ class AblautApiClient {
       uri,
       {
         'eventSlug': link.eventSlug,
-        'channelSlug': link.channelSlug,
+        'channelSlug': channelSlug,
         if (identity != null && identity.isNotEmpty) 'identity': identity,
         if (listenerSessionToken != null && listenerSessionToken.isNotEmpty)
           'listenerSessionToken': listenerSessionToken,
+        if (eventListenerSessionToken != null &&
+            eventListenerSessionToken.isNotEmpty)
+          'eventListenerSessionToken': eventListenerSessionToken,
       },
       headers: headers,
     );

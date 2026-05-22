@@ -87,6 +87,7 @@ class LiveKitService {
     required ListenerLink link,
     required PublicChannelContext channelContext,
     String? listenerSessionToken,
+    String? eventListenerSessionToken,
     String? roomNameOverride,
     String? participantIdentityOverride,
   }) async {
@@ -116,6 +117,7 @@ class LiveKitService {
         link: link,
         identity: participantIdentityOverride,
         listenerSessionToken: listenerSessionToken,
+        eventListenerSessionToken: eventListenerSessionToken,
       );
       await _openRoom(link, channelContext, cred.url, cred.token);
     } on ApiException catch (e) {
